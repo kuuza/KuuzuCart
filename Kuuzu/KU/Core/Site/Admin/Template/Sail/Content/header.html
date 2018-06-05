@@ -1,0 +1,92 @@
+<div id="adminMenu">
+  <ul class="apps">
+    <li class="shortcuts"><a href="{link}{raw}default_site_application{raw}{link}"><img src="{publiclink}images/kuuzu_icon.png{publiclink}" /></a></li>
+
+{iftrue logged_in}
+    <li><a href="#">Applications &#9662;</a>
+      {raw}apps_links{raw}
+    </li>
+{iftrue}
+
+    <li><a href="{link}|Shop{link}" target="_blank">{lang}header_title_online_catalog{lang}</a></li>
+    <li><a href="https://kuuzu.org" target="_blank">{lang}header_title_help{lang} &#9662;</a>
+      <ul>
+        <li><a href="https://kuuzu.org" target="_blank">Kuuzu Website</a></li>
+        <li><a href="https://kuuzu.org/docs" target="_blank">Online Documentation</a></li>
+        <li><a href="https://kuuzu.org/forums" target="_blank">Community Forums</a></li>
+        <li><a href="https://kuuzu.org/docs" target="_blank">Support Services</a></li>
+        <li><a href="https://kuuzu.org/apps" target="_blank">Add-Ons</a></li>
+        <li><a href="https://github.com/kuuza/kuuzu/issues" target="_blank">Bug Reporter</a></li>
+      </ul>
+    </li>
+  </ul>
+
+{iftrue logged_in}
+  {raw}shortcut_links{raw}
+{iftrue}
+
+</div>
+
+<script>
+$('#adminMenu .apps').droppy({speed: 0});
+$('#adminMenu .apps li img').tipsy();
+</script>
+
+{iftrue logged_in}
+<script>
+var totalShortcuts = {value}total_shortcuts{value};
+var wkn = new Object;
+
+if ( $.cookie('wkn') ) {
+  wkn = $.secureEvalJSON($.cookie('wkn'));
+}
+
+function updateShortcutNotifications(resetApplication) {
+  $.getJSON('{rpclink}GetShortcutNotifications&reset=RESETAPP|Dashboard|Admin{rpclink}'.replace('RESETAPP', resetApplication), function (data) {
+    if ( ('rpcStatus' in data) && (data['rpcStatus'] == 1) ) {
+      $.each(data['entries'], function(key, val) {
+        if ( $('#shortcut-' + key + ' .notBubble').html != val ) {
+          if ( val > 0 || val.length > 0 ) {
+            $('#shortcut-' + key + ' .notBubble').html(val).show();
+
+            if ( (typeof webkitNotifications != 'undefined') && (webkitNotifications.checkPermission() == 0) ) {
+              if ( typeof wkn[key] == 'undefined' ) {
+                wkn[key] = new Object;
+              }
+
+              if ( wkn[key].value != val ) {
+                wkn[key].value = val;
+                wkn[key].n = webkitNotifications.createNotification('{publiclink}images/applications/32/APPICON.png{publiclink}'.replace('APPICON', key), key, val);
+                wkn[key].n.replaceId = key;
+                wkn[key].n.ondisplay = function(event) {
+                  setTimeout(function() {
+                    event.currentTarget.cancel();
+                  }, 5000);
+                };
+                wkn[key].n.show();
+              }
+            }
+          } else {
+            $('#shortcut-' + key + ' .notBubble').hide();
+          }
+        }
+      });
+    }
+
+    $.cookie('wkn', $.toJSON(wkn));
+  });
+}
+
+$(function() {
+  if ( totalShortcuts > 0 ) {
+    updateShortcutNotifications(typeof resetShortcutNotification != 'undefined' ? '{value}current_site_application{value}' : null);
+
+    setInterval('updateShortcutNotifications()', 10000);
+  }
+});
+
+if ( (typeof window.external.msAddSiteMode != 'undefined') && window.external.msIsSiteMode() ) {
+  {raw}ms_pinned_sites{raw}
+}
+</script>
+{iftrue}

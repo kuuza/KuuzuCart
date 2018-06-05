@@ -1,0 +1,184 @@
+<?php
+/**
+ * Kuuzu Cart
+ *
+ * @copyright (c) 2007 - 2017 osCommerce; http://www.oscommerce.com
+ * @license BSD License; http://www.oscommerce.com/bsdlicense.txt
+ *
+ * @copyright Copyright c 2018 Kuuzu; https://kuuzu.org
+ * @license MIT License; https://kuuzu.org/mitlicense.txt
+ */
+
+  namespace Kuuzu\KU\Core\Site\Admin;
+
+  use Kuuzu\KU\Core\KUUZU;
+  use Kuuzu\KU\Core\XML;
+
+  class Language extends \Kuuzu\KU\Core\Language {
+    public function __construct() {
+      parent::__construct();
+
+      header('Content-Type: text/html; charset=' . $this->getCharacterSet());
+
+      $this->loadIniFile();
+      $this->loadIniFile(KUUZU::getSiteApplication() . '.php');
+    }
+
+    public function loadIniFile($filename = null, $comment = '#', $language_code = null) {
+      if ( is_null($language_code) ) {
+        $language_code = $this->_code;
+      }
+
+      if ( $this->_languages[$language_code]['parent_id'] > 0 ) {
+        $this->loadIniFile($filename, $comment, $this->getCodeFromID($this->_languages[$language_code]['parent_id']));
+      }
+
+      if ( is_null($filename) ) {
+        if ( file_exists(KUUZU::BASE_DIRECTORY . 'Custom/Site/' . KUUZU::getSite() . '/languages/' . $language_code . '.php') ) {
+          $contents = file(KUUZU::BASE_DIRECTORY . 'Custom/Site/' . KUUZU::getSite() . '/languages/' . $language_code . '.php');
+        } elseif ( file_exists(KUUZU::BASE_DIRECTORY . 'Core/Site/' . KUUZU::getSite() . '/languages/' . $language_code . '.php') ) {
+          $contents = file(KUUZU::BASE_DIRECTORY . 'Core/Site/' . KUUZU::getSite() . '/languages/' . $language_code . '.php');
+        } else {
+          return array();
+        }
+      } else {
+        if ( substr(realpath(KUUZU::BASE_DIRECTORY . 'Custom/Site/' . KUUZU::getSite() . '/languages/' . $language_code . '/' . $filename), 0, strlen(realpath(KUUZU::BASE_DIRECTORY . 'Custom/Site/' . KUUZU::getSiteApplication() . '/languages/' . $language_code))) != realpath(KUUZU::BASE_DIRECTORY . 'Custom/Site/' . KUUZU::getSiteApplication() . '/languages/' . $language_code) ) {
+          return array();
+        }
+
+        if ( substr(realpath(KUUZU::BASE_DIRECTORY . 'Core/Site/' . KUUZU::getSite() . '/languages/' . $language_code . '/' . $filename), 0, strlen(realpath(KUUZU::BASE_DIRECTORY . 'Core/Site/' . KUUZU::getSiteApplication() . '/languages/' . $language_code))) != realpath(KUUZU::BASE_DIRECTORY . 'Core/Site/' . KUUZU::getSiteApplication() . '/languages/' . $language_code) ) {
+          return array();
+        }
+
+        if ( file_exists(KUUZU::BASE_DIRECTORY . 'Custom/Site/' . KUUZU::getSite() . '/languages/' . $language_code . '/' . $filename) ) {
+          $contents = file(KUUZU::BASE_DIRECTORY . 'Custom/Site/' . KUUZU::getSite() . '/languages/' . $language_code . '/' . $filename);
+        } elseif ( file_exists(KUUZU::BASE_DIRECTORY . 'Core/Site/' . KUUZU::getSite() . '/languages/' . $language_code . '/' . $filename) ) {
+          $contents = file(KUUZU::BASE_DIRECTORY . 'Core/Site/' . KUUZU::getSite() . '/languages/' . $language_code . '/' . $filename);
+        } else {
+          return array();
+        }
+      }
+
+      $this->parseIniContents($contents, $comment);
+    }
+
+    public function loadIniFileFromDirectory($directory, $filename, $comment = '#', $language_code = null) {
+      if ( is_null($language_code) ) {
+        $language_code = $this->_code;
+      }
+
+      if ( $this->_languages[$language_code]['parent_id'] > 0 ) {
+        $this->loadFromDirectory($directory, $filename, $comment, $this->getCodeFromID($this->_languages[$language_code]['parent_id']));
+      }
+
+      if ( is_file($directory . '/' . $language_code . '/' . $filename) ) {
+        $contents = file($directory . '/' . $language_code . '/' . $filename);
+      } else {
+        return array();
+      }
+
+      $this->parseIniContents($contents, $comment);
+    }
+
+    public function parseIniContents($contents, $comment = '#') {
+      $ini_array = array();
+
+      foreach ( $contents as $line ) {
+        $line = trim($line);
+
+        $firstchar = substr($line, 0, 1);
+
+        if ( !empty($line) && ( $firstchar != $comment) ) {
+          $delimiter = strpos($line, '=');
+
+          if ( ($delimiter !== false) && ( preg_match('/^[A-Za-z0-9_]+$/', trim(substr($line, 0, $delimiter))) == 1 ) ) {
+            $key = trim(substr($line, 0, $delimiter));
+            $value = trim(substr($line, $delimiter + 1));
+
+            $ini_array[$key] = $value;
+          } elseif ( isset($key) ) {
+            $ini_array[$key] .= "\n" . trim($line);
+          }
+        }
+      }
+
+      $this->_definitions = array_merge($this->_definitions, $ini_array);
+    }
+
+    public function injectDefinitions($file, $language_code = null) {
+      if ( is_null($language_code) ) {
+        $language_code = $this->_code;
+      }
+
+      if ( $this->_languages[$language_code]['parent_id'] > 0 ) {
+        $this->injectDefinitions($file, $this->getCodeFromID($this->_languages[$language_code]['parent_id']));
+      }
+
+      foreach ($this->extractDefinitions($language_code . '/' . $file) as $def) {
+        $this->_definitions[$def['key']] = $def['value'];
+      }
+    }
+
+    public static function extractDefinitions($xml) {
+      $definitions = array();
+
+      if ( file_exists(KUUZU::BASE_DIRECTORY . 'Custom/Site/Shop/Languages/' . $xml) ) {
+        $definitions = XML::toArray(simplexml_load_file(KUUZU::BASE_DIRECTORY . 'Custom/Site/Shop/Languages/' . $xml));
+      } elseif ( file_exists(KUUZU::BASE_DIRECTORY . 'Core/Site/Shop/Languages/' . $xml) ) {
+        $definitions = XML::toArray(simplexml_load_file(KUUZU::BASE_DIRECTORY . 'Core/Site/Shop/Languages/' . $xml));
+      }
+
+      if ( !empty($definitions) ) {
+        if ( !isset($definitions['language']) ) { // create root element (simpleXML does not use root element)
+          $definitions = array('language' => $definitions);
+        }
+
+        if ( !isset($definitions['language']['definitions']['definition'][0]) ) {
+          $definitions['language']['definitions']['definition'] = array($definitions['language']['definitions']['definition']);
+        }
+
+        $definitions = $definitions['language']['definitions']['definition'];
+      }
+
+      return $definitions;
+    }
+
+    function getData($id, $key = null) {
+      foreach ($this->_languages as $l) {
+        if ($l['id'] == $id) {
+          if (empty($key)) {
+            return $l;
+          } else {
+            return $l[$key];
+          }
+        }
+      }
+
+      return null;
+    }
+
+    function getID($code = null) {
+      if ( empty($code) ) {
+        return $this->_languages[$this->_code]['id'];
+      }
+
+      $data = array('code' => $code);
+
+      $result = KUUZU::callDB('Admin\GetLanguageID', $data, 'Site');
+
+      return $result['languages_id'];
+    }
+
+    function getCode($id = null) {
+      if ( empty($id) ) {
+        return $this->_code;
+      }
+
+      return $this->getData($id, 'code');
+    }
+
+    function isDefined($key) {
+      return isset($this->_definitions[$key]);
+    }
+  }
+?>

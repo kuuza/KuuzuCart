@@ -1,0 +1,5 @@
+Kuuzu/KU/Work/*
+!Kuuzu/KU/Work/CoreUpdate/update.phar.pubkey
+Kuuzu/KU/Config/local_settings.ini
+Kuuzu/KU/Custom/*
+!Kuuzu/KU/Custom/README
