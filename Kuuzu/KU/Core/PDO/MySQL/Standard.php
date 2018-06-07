@@ -14,7 +14,7 @@
   use Kuuzu\KU\Core\KUUZU;
 
   class Standard extends \Kuuzu\KU\Core\PDO {
-    protected $_has_native_fk = false;
+    protected $_has_native_fk = true;
     protected $_fkeys = [];
 
     public function __construct($server, $username, $password, $database, $port, $driver_options) {
