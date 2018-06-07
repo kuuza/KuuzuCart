@@ -29,6 +29,7 @@
       $in_transaction = false;
 
       if ( count($data) > 1 ) {
+        $KUUZU_PDO->exec("SET autocommit=0;");
         $KUUZU_PDO->beginTransaction();
 
         $in_transaction = true;
