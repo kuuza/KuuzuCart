@@ -121,8 +121,8 @@
     <h2><?php echo KUUZU::getDef('page_heading_server_requirements'); ?></h2>
 
     <ul>
-      <li>PHP v5.3+ (with PDO MySQL extension)</li>
-      <li>MySQL v4.1.13+ or v5.0.7+</li>
+      <li>PHP v7+ (with PDO MySQL extension)</li>
+      <li>MySQL v5.0.7+</li>
     </ul>
 
     <h2><?php echo KUUZU::getDef('page_heading_installation_type'); ?></h2>
