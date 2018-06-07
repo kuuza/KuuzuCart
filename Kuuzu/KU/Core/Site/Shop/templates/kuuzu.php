@@ -59,7 +59,7 @@
 
   if ( $KUUZU_Template->hasPageContentModules() ) {
     foreach ( $KUUZU_Service->getCallBeforePageContent() as $service ) {
-      Registry::get($service[0])->$service[1]();
+      Registry::get($service[0])->{$service[1]}();
     }
 
     foreach ( $KUUZU_Template->getContentModules('before') as $content_module ) {
