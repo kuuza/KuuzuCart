@@ -98,7 +98,7 @@
 <?php
   if ( $KUUZU_Template->hasPageContentModules() ) {
     foreach ( $KUUZU_Service->getCallAfterPageContent() as $service ) {
-      Registry::get($service[0])->$service[1]();
+      Registry::get($service[0])->{$service[1]}();
     }
 
     foreach ( $KUUZU_Template->getContentModules('after') as $content_module ) {
